@@ -1,0 +1,32 @@
+# R
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+
+# Python (build tooling only, not project code)
+__pycache__/
+*.pyc
+.venv/
+
+# Data / models (regenerable)
+data/raw/
+data/processed/
+models/*.rds
+!models/metrics.csv
+!models/driver_importance.csv
+!models/channel_benchmark.csv
+!models/anomaly_metrics.csv
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# SPSS / SAS / STATA work files
+*.sav
+*.sas7bdat
+*.dta
+*.log
+*.lst

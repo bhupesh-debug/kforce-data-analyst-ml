@@ -1,0 +1,6 @@
+# R packages (install once)
+# install.packages(c("randomForest", "gbm"))
+randomForest>=4.7
+gbm>=2.2
+# Base R only otherwise: stats, graphics, utils (no other dependencies)
+# R >= 4.3 recommended. Tested on R 4.5 / Ubuntu 24.04.

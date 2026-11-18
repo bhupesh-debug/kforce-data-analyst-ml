@@ -1,0 +1,6 @@
+"channel","avg_daily_tickets","sla_attainment_pct","first_contact_resolution_pct","csat_score","avg_handle_time_min","avg_backlog","sla_below_90_pct"
+"Helpdesk",469.8,96.87,73.83,4.22,9.52,15.1,0.5
+"Billing Support",274.9,95.89,70.88,4,12.22,8,1
+"Publishing Ops",135.6,95,70.14,4.11,14.18,4,0.8
+"Field Service",225.8,94.38,65.92,4.32,17.99,7.3,3.2
+"Onboarding",193.6,93.13,67.86,4.4,22.08,6,5.5

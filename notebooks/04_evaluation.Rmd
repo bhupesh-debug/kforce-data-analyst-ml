@@ -1,0 +1,61 @@
+---
+title: "04 — Evaluation"
+author: "Bhupesh Chandra Dimri"
+date: "2026-11-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+for (f in list.files("../R", pattern = "^0[2-7]_", full.names = TRUE)) source(f)
+library(randomForest)
+library(gbm)
+```
+
+# Evaluation
+
+All metrics are measured on the **61-day time-based hold-out**
+(2025-11-01 to 2025-12-30). Nothing is reported on training data.
+
+```{r eval}
+pipe <- run_pipeline("../data/synthetic", "../data/processed")
+daily <- pipe$daily
+results <- list()
+for (target in c("sla_attainment_pct", "tickets_received")) {
+  bf <- build_features(daily, target, include_operational = FALSE)
+  sp <- time_split(bf$frame, test_days = 61)
+  ml <- train_ml_forecasters(sp$train[, bf$features, drop = FALSE],
+                             sp$train[[target]])
+  preds <- predict_ml(ml, sp$test[, bf$features, drop = FALSE])
+  for (nm in names(preds)) {
+    m <- regression_metrics(sp$test[[target]], preds[[nm]])
+    results[[length(results) + 1]] <-
+      data.frame(target = target, model = nm, mae = m$mae,
+                 rmse = m$rmse, mape = m$mape)
+  }
+}
+do.call(rbind, results)
+```
+
+## What "good" means here
+
+- **MAPE under 5%** on SLA attainment is the bar: SLA is a
+  slow-moving, bounded KPI (68–99.5%), so a model that cannot beat
+  seasonal naive by a clear margin is not adding value.
+- **Anomaly detection** is judged on F1 against the injected
+  incidents — recall matters more than precision, because a missed
+  bad feed corrupts every downstream report.
+- **Driver ranking** is judged by stability: the top-3 drivers
+  should be the same under permutation importance and under the
+  STATA / SPSS / SAS standardised-coefficient replication.
+
+## Honest limits
+
+- Synthetic data: magnitudes and rankings are illustrative, not
+  evidence about any real client.
+- The STATA / SPSS / SAS scripts replicate the same data, splits
+  and metrics but were not executed on this machine (commercial
+  software not installed). Run them in the licensed application to
+  reproduce the comparison table.
+- A 14-day forecast degrades with horizon; the reported 14-day
+  MAPE is the honest number, not the 1-step MAPE.

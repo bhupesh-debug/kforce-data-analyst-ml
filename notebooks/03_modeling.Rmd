@@ -1,0 +1,59 @@
+---
+title: "03 — Modeling"
+author: "Bhupesh Chandra Dimri"
+date: "2026-11-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+for (f in list.files("../R", pattern = "^0[2-6]_", full.names = TRUE)) source(f)
+library(randomForest)
+library(gbm)
+```
+
+# Modeling
+
+Three problems, one shared pipeline:
+
+| Problem | Type | Models |
+|---|---|---|
+| 1. KPI forecasting | Time series / regression | Seasonal naive, Holt-Winters, linear, random forest, gradient boosting |
+| 2. Data-quality anomalies | Anomaly detection | Z-score rule (\|z\| > 4) |
+| 3. SLA drivers | Regression + importance | Gradient boosting, permutation importance |
+
+## Forecasting — time-based split, no leakage
+
+```{r forecast}
+pipe <- run_pipeline("../data/synthetic", "../data/processed")
+bf <- build_features(pipe$daily, "sla_attainment_pct",
+                     include_operational = FALSE)
+sp <- time_split(bf$frame, test_days = 61)
+ml <- train_ml_forecasters(sp$train[, bf$features, drop = FALSE],
+                           sp$train$sla_attainment_pct)
+preds <- predict_ml(ml, sp$test[, bf$features, drop = FALSE])
+regression_metrics(sp$test$sla_attainment_pct, preds$gbm)
+```
+
+## Holt-Winters (base R `stats::HoltWinters`)
+
+```{r hw}
+hw <- holt_winters_forecast(sp$train$sla_attainment_pct, steps = 14)
+hw$forecast
+```
+
+## Anomaly detection
+
+```{r anomaly}
+hf <- anomaly_features(pipe$health)
+det <- detect_anomalies(hf, ANOMALY_FEATURES)
+anomaly_metrics(hf$is_anomaly, det$flag)
+```
+
+## Why gradient boosting wins here
+
+The SLA series is driven by interacting operational levers
+(staffing ratio × backlog pressure), which a linear model can only
+approximate additively. Gradient boosting captures the interaction
+without sacrificing interpretability — permutation importance still
+tells the stakeholder which lever matters.

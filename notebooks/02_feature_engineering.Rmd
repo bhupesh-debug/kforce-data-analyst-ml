@@ -1,0 +1,49 @@
+---
+title: "02 — Feature Engineering"
+author: "Bhupesh Chandra Dimri"
+date: "2026-11-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+source("../R/02_data_pipeline.R")
+source("../R/03_feature_engineering.R")
+```
+
+# Feature Engineering
+
+Features are deliberately interpretable — a Data Analyst must be able
+to explain every input to a stakeholder.
+
+```{r features}
+pipe <- run_pipeline("../data/synthetic", "../data/processed")
+daily <- pipe$daily
+bf <- build_features(daily, "sla_attainment_pct",
+                     include_operational = FALSE)
+head(bf$frame[, c("date", "sla_attainment_pct", "lag_1", "lag_7",
+                  "roll_mean_7", "vol_dev_28d")])
+```
+
+## Design decisions
+
+1. **Forecaster uses lag + calendar features only.** Same-day
+   operational features (staffing ratio, backlog) are explanatory,
+   not forecasting inputs — using them would leak information that
+   is only known after the day ends.
+2. **Lags 1 / 7 / 14 / 28** capture yesterday, last week, and the
+   monthly cycle. Rolling means smooth the noise.
+3. **`vol_dev_28d`** (volume deviation from the 28-day rolling
+   mean) is the demand-shock flag — the feature that lets the model
+   react to surges instead of averaging them away.
+4. **Calendar features** (day of week, weekend flag, month,
+   day-of-year sin/cos) encode the weekly and annual seasonality
+   found in the EDA.
+
+## Anomaly features
+
+```{r anomaly-feats}
+hf <- anomaly_features(pipe$health)
+head(hf[, c("date", "rows_received_ratio", "missing_rate_pct",
+            "health_score", "is_anomaly")])
+```

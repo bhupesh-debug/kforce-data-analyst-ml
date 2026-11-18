@@ -1,0 +1,9 @@
+"metric","value"
+"precision",0.714285714285714
+"recall",1
+"f1",0.833333333333333
+"n_flagged",35
+"n_true",25
+"tp",25
+"fp",10
+"fn",0
